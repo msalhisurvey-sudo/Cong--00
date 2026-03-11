@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOHAMED SALHI - إدارة رصيد العطل</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- إضافة مكتبة html2canvas لتحويل الصفحة إلى صورة -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- إضافة مكتبة jspdf لإنشاء PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+    body{background:#f0f2f5;padding:10px;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    
+    /* شاشة تسجيل الدخول */
+    .login-screen{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:linear-gradient(135deg, #667eea, #764ba2);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+    .login-box{
+      background:white;
+      padding:30px;
+      border-radius:20px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.3);
+      width:90%;
+      max-width:350px;
+      text-align:center;
+    }
+    .login-box h2{
+      color:#0f9d58;
+      margin-bottom:10px;
+      font-size:1.5rem;
+    }
+    .login-box h3{
+      color:#666;
+      margin-bottom:20px;
+      font-size:0.9rem;
+      border:none;
+    }
+    .login-box input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border:2px solid #ddd;
+      border-radius:10px;
+      font-size:1rem;
+      text-align:center;
+    }
+    .login-box input:focus{
+      border-color:#0f9d58;
+      outline:none;
+    }
+    .login-box button{
+      width:100%;
+      padding:12px;
+      background:#0f9d58;
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-size:1rem;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    .login-box button:hover{
+      background:#0a8f3d;
+      transform:translateY(-2px);
+    }
+    .login-box .error{
+      color:#ea4335;
+      font-size:0.8rem;
+      margin-top:5px;
+    }
+    
+    /* المحتوى الرئيسي مخفي في البداية */
+    .main-content{
+      display:none;
+      width:100%;
+    }
+    
+    .container{max-width:850px;margin:auto;background:white;border-radius:12px;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+    
+    /* ترويسة باسم MOHAMED SALHI */
+    .header{
+      background:linear-gradient(135deg, #0f9d58, #0a8f3d);
+      color:white;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:15px;
+      text-align:center;
+      box-shadow:0 4px 10px rgba(15,157,88,0.3);
+    }
+    .header h1{
+      font-size:1.8rem;
+      margin-bottom:5px;
+      color:white;
+    }
+    .header h2{
+      font-size:1rem;
+      font-weight:normal;
+      opacity:0.9;
+    }
+    
+    h3{font-size:0.95rem;color:#333;margin:10px 0 5px;border-right:3px solid #0f9d58;padding-right:8px;}
+    .solde{background:#e6f4ea;padding:8px 12px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;font-size:0.95rem;margin-bottom:15px;}
+    .solde span{background:white;padding:3px 12px;border-radius:20px;color:#0f9d58;font-weight:bold;border:1px solid #0f9d58;}
+    .row{display:flex;gap:5px;margin:5px 0;flex-wrap:wrap;align-items:center;}
+    input,textarea,select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;flex:1;min-width:100px;}
+    .small-input{width:80px;flex:0 0 auto;}
+    button{padding:6px 12px;border:none;border-radius:6px;background:#0f9d58;color:white;cursor:pointer;font-size:0.85rem;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:0.2s;}
+    button:hover{background:#0a8f3d;transform:translateY(-2px);}
+    button.small{padding:4px 8px;font-size:0.75rem;}
+    .action-bar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;}
+    .excluded-box{background:#f8f9fa;padding:8px;border-radius:6px;margin:5px 0;display:flex;flex-wrap:wrap;gap:5px;font-size:0.8rem;}
+    .excluded-item{background:white;border:1px solid #ff9800;padding:4px 8px;border-radius:4px;display:flex;align-items:center;gap:5px;}
+    table{width:100%;border-collapse:collapse;font-size:0.7rem;margin:5px 0;}
+    th{background:#0f9d58;color:white;padding:6px;font-weight:500;}
+    td{padding:4px;border-bottom:1px solid #eee;text-align:center;vertical-align:middle;}
+    .note-cell{max-width:150px;text-align:right;font-size:0.65rem;}
+    .note-item{background:#f0f0f0;border-radius:3px;padding:2px 4px;margin:2px 0;display:inline-block;border-right:2px solid #ff9800;font-size:0.65rem;}
+    .half-badge{background:#ff9800;color:white;border-radius:10px;padding:2px 6px;font-size:0.6rem;margin-right:3px;}
+    .date-badge{background:#e0e0e0;color:#333;border-radius:8px;padding:2px 5px;font-size:0.6rem;display:inline-block;margin-top:2px;}
+    .toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:8px 16px;border-radius:20px;font-size:0.8rem;z-index:1000;opacity:0;transition:0.3s;}
+    .toast.show{opacity:1;}
+    hr{margin:12px 0;border:1px dashed #ddd;}
+    i{font-size:0.8rem;}
+    .action-buttons{display:flex;gap:2px;justify-content:center;}
+    .last-update{color:#666;font-size:0.65rem;}
+    .print-btn{background:#9c27b0;}
+    .print-btn:hover{background:#7b1fa2;}
+    .save-btn{background:#2196f3;}
+    .save-btn:hover{background:#1976d2;}
+    .report-section{margin:15px 0;padding:10px;border:2px dashed #0f9d58;border-radius:8px;}
+    .watermark{
+      position:fixed;
+      bottom:10px;
+      right:10px;
+      opacity:0.1;
+      font-size:3rem;
+      color:#0f9d58;
+      pointer-events:none;
+      z-index:1000;
+      transform:rotate(-15deg);
+      font-weight:bold;
+    }
+    .logout-btn{
+      position:absolute;
+      top:10px;
+      left:10px;
+      background:#ea4335;
+      padding:5px 10px;
+      border-radius:20px;
+      color:white;
+      font-size:0.8rem;
+      cursor:pointer;
+      z-index:100;
+    }
+    /* نافذة تأكيد مخصصة */
+    .confirm-dialog{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:10000;
+    }
+    .confirm-box{
+      background:white;
+      padding:25px;
+      border-radius:15px;
+      max-width:350px;
+      text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,0.3);
+    }
+    .confirm-box h3{
+      color:#333;
+      margin-bottom:15px;
+      border:none;
+    }
+    .confirm-box p{
+      margin-bottom:20px;
+      color:#666;
+    }
+    .confirm-buttons{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+    }
+    .confirm-buttons button{
+      flex:1;
+      padding:10px;
+    }
+    .confirm-yes{
+      background:#0f9d58;
+    }
+    .confirm-no{
+      background:#ea4335;
+    }
+  </style>
+</head>
+<body>
+<!-- شاشة تسجيل الدخول -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2><i class="fas fa-calendar-alt"></i> MOHAMED SALHI</h2>
+    <h3>نظام إدارة رصيد العطل</h3>
+    <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور" onkeypress="if(event.key==='Enter') checkPassword()">
+    <button onclick="checkPassword()"><i class="fas fa-lock-open"></i> دخول</button>
+    <div id="loginError" class="error"></div>
+  </div>
+</div>
+
+<!-- نافذة التأكيد المخصصة -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">تأكيد العملية</h3>
+    <p id="confirmMessage">هل أنت متأكد من القيام بهذه العملية؟</p>
+    <div class="confirm-buttons">
+      <button class="confirm-yes" id="confirmYesBtn"><i class="fas fa-check"></i> نعم</button>
+      <button class="confirm-no" id="confirmNoBtn"><i class="fas fa-times"></i> لا</button>
+    </div>
+  </div>
+</div>
+
+<!-- المحتوى الرئيسي -->
+<div class="main-content" id="mainContent">
+  <!-- زر تسجيل الخروج -->
+  <div class="logout-btn" onclick="logout()">
+    <i class="fas fa-sign-out-alt"></i> خروج
+  </div>
+  
+  <!-- علامة مائية خفيفة باسم MOHAMED SALHI -->
+  <div class="watermark">MOHAMED SALHI</div>
+
+  <div class="container" id="reportContent">
+    <!-- ترويسة باسم MOHAMED SALHI -->
+    <div class="header">
+      <h1><i class="fas fa-calendar-alt"></i> MOHAMED SALHI</h1>
+      <h2>نظام إدارة رصيد العطل - الإصدار 1.0</h2>
+    </div>
+    
+    <div class="solde">
+      <span><i class="fas fa-wallet"></i> الرصيد الحالي</span>
+      <span id="solde">25.0</span> يوم متبقي
+    </div>
+
+    <!-- شريط الأزرار -->
+    <div class="action-bar">
+      <button onclick="confirmAction('حفظ البيانات', 'هل أنت متأكد من حفظ البيانات؟', saveToStorage)" class="save-btn" style="flex:1"><i class="fas fa-save"></i> حفظ البيانات</button>
+      <button onclick="confirmAction('طباعة PDF', 'هل أنت متأكد من إنشاء ملف PDF؟', printAsPDF)" class="print-btn" style="flex:1"><i class="fas fa-file-pdf"></i> PDF</button>
+      <button onclick="confirmAction('حفظ كصورة', 'هل أنت متأكد من حفظ التقرير كصورة؟', printAsJPG)" class="print-btn" style="flex:1; background:#ff9800;"><i class="fas fa-camera"></i> JPG</button>
+      <button onclick="confirmAction('مسح جميع البيانات', '⚠️ هل أنت متأكد من مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!', clearAllData)" style="background:#ea4335; flex:0.5"><i class="fas fa-trash"></i> مسح</button>
+    </div>
+
+    <h3><i class="fas fa-plus-circle"></i> عطلة جديدة</h3>
+    <div class="row">
+      <input type="date" id="startDate" placeholder="من">
+      <input type="date" id="endDate" placeholder="إلى">
+      <input type="text" id="reason" placeholder="السبب">
+      <select id="congeType" class="small-input">
+        <option value="1">يوم كامل</option>
+        <option value="0.5">نصف يوم</option>
+      </select>
+    </div>
+
+    <h3><i class="fas fa-ban"></i> استبعاد يوم</h3>
+    <div class="row">
+      <input type="date" id="excludedDate" placeholder="التاريخ">
+      <input type="text" id="excludedReason" placeholder="السبب">
+      <button onclick="addExcluded()"><i class="fas fa-plus"></i> إضافة</button>
+    </div>
+    
+    <div id="excludedList" class="excluded-box"></div>
+
+    <div class="row" style="justify-content:space-between; margin-top:8px;">
+      <button onclick="confirmAction('تطبيق العطلة', 'هل البيانات صحيحة؟ تأكد من تواريخ العطلة', applyConge)" style="flex:1"><i class="fas fa-check"></i> تطبيق العطلة</button>
+    </div>
+
+    <!-- قسم التقرير القابل للطباعة مع اسم MOHAMED SALHI -->
+    <div class="report-section" id="printableReport">
+      <h3 style="color:#0f9d58; text-align:center;">
+        <i class="fas fa-chart-bar"></i> تقرير الإجازات - MOHAMED SALHI
+      </h3>
+      <p style="text-align:left; font-size:0.7rem;" id="reportDate"></p>
+      
+      <h3 style="margin-top:10px;"><i class="fas fa-history"></i> سجل العطل</h3>
+      <div style="overflow-x:auto">
+        <table>
+          <tr>
+            <th>المدة</th>
+            <th>الأيام</th>
+            <th>النوع</th>
+            <th>السبب</th>
+            <th>المستبعدة</th>
+            <th>تاريخ الإضافة</th>
+          </tr>
+          <tbody id="printCongeTable"></tbody>
+        </table>
+      </div>
+
+      <hr>
+
+      <h3><i class="fas fa-briefcase"></i> الأيام الإضافية</h3>
+      <div style="overflow-x:auto">
+        <table>
+          <tr>
+            <th>التاريخ</th>
+            <th>السبب</th>
+            <th>النوع</th>
+            <th>الإضافة</th>
+            <th>تاريخ الإضافة</th>
+          </tr>
+          <tbody id="printExtraTable"></tbody>
+        </table>
+      </div>
+      
+      <div style="margin-top:15px; padding:10px; background:#e6f4ea; border-radius:8px; text-align:center;">
+        <strong>الرصيد النهائي: <span id="printSolde">25.0</span> يوم</strong>
+      </div>
+      <div style="text-align:left; margin-top:5px; font-size:0.6rem; color:#666;">
+        <i class="fas fa-user"></i> MOHAMED SALHI - تم الإنشاء بواسطة النظام
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;"><i class="fas fa-history"></i> سجل العطل (الإدارة)</h3>
+    <div style="overflow-x:auto">
+      <table>
+        <tr>
+          <th>المدة</th>
+          <th>الأيام</th>
+          <th>النوع</th>
+          <th>السبب</th>
+          <th>المستبعدة</th>
+          <th>تاريخ الإضافة</th>
+          <th>تحكم</th>
+        </tr>
+        <tbody id="congeTable"></tbody>
+      </table>
+    </div>
+
+    <hr>
+
+    <h3><i class="fas fa-briefcase"></i> يوم إضافي</h3>
+    <div class="row">
+      <input type="date" id="extraDate" placeholder="التاريخ">
+      <input type="text" id="extraReason" placeholder="السبب">
+      <select id="extraType" class="small-input">
+        <option value="1">يوم كامل</option>
+        <option value="0.5">نصف يوم</option>
+      </select>
+      <button onclick="confirmAction('إضافة يوم إضافي', 'هل أنت متأكد من إضافة هذا اليوم الإضافي؟', addExtra)" style="background:#ff9800"><i class="fas fa-plus"></i> إضافة</button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table>
+        <tr>
+          <th>التاريخ</th>
+          <th>السبب</th>
+          <th>النوع</th>
+          <th>الإضافة</th>
+          <th>تاريخ الإضافة</th>
+          <th>تحكم</th>
+        </tr>
+        <tbody id="extraTable"></tbody>
+      </table>
+    </div>
+    
+    <div class="last-update" style="text-align:left; margin-top:10px;">
+      <i class="fas fa-clock"></i> آخر تحديث: <span id="lastSaveTime"></span> | <i class="fas fa-user"></i> MOHAMED SALHI
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ========== كلمة المرور الصحيحة ==========
+const CORRECT_PASSWORD = "ftimo!90";
+
+// ========== نافذة التأكيد المخصصة ==========
+let confirmCallback = null;
+
+window.confirmAction = function(title, message, callback) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmDialog').style.display = 'flex';
+  confirmCallback = callback;
+}
+
+document.getElementById('confirmYesBtn').onclick = function() {
+  document.getElementById('confirmDialog').style.display = 'none';
+  if(confirmCallback) {
+    confirmCallback();
+    confirmCallback = null;
+  }
+}
+
+document.getElementById('confirmNoBtn').onclick = function() {
+  document.getElementById('confirmDialog').style.display = 'none';
+  confirmCallback = null;
+}
+
+// ========== التحقق من كلمة المرور ==========
+window.checkPassword = function() {
+  let password = document.getElementById('passwordInput').value;
+  let errorDiv = document.getElementById('loginError');
+  
+  if(password === CORRECT_PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    errorDiv.innerHTML = '';
+    loadFromStorage();
+    updateAll();
+    document.getElementById('lastSaveTime').textContent = getCurrentDateTime();
+  } else {
+    errorDiv.innerHTML = 'كلمة المرور غير صحيحة';
+    document.getElementById('passwordInput').value = '';
+  }
+}
+
+// ========== تسجيل الخروج ==========
+window.logout = function() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('loginError').innerHTML = '';
+}
+
+// ========== دالة الحصول على التاريخ الحالي ==========
+function getCurrentDateTime() {
+  let now = new Date();
+  let year = now.getFullYear();
+  let month = String(now.getMonth() + 1).padStart(2, '0');
+  let day = String(now.getDate()).padStart(2, '0');
+  let hours = String(now.getHours()).padStart(2, '0');
+  let minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// ========== تهيئة البيانات من localStorage ==========
+let solde = 25.0;
+let tempExcluded = [];
+let congeList = [];
+let extraList = [];
+
+function loadFromStorage() {
+  try {
+    let savedSolde = localStorage.getItem('conge_solde');
+    let savedConge = localStorage.getItem('conge_list');
+    let savedExtra = localStorage.getItem('extra_list');
+    
+    if(savedSolde) solde = parseFloat(savedSolde);
+    if(savedConge) congeList = JSON.parse(savedConge);
+    if(savedExtra) extraList = JSON.parse(savedExtra);
+    
+    congeList = congeList.map(item => {
+      if(!item.createdAt) item.createdAt = getCurrentDateTime();
+      if(!item.updatedAt) item.updatedAt = item.createdAt;
+      return item;
+    });
+    
+    extraList = extraList.map(item => {
+      if(!item.createdAt) item.createdAt = getCurrentDateTime();
+      if(!item.updatedAt) item.updatedAt = item.createdAt;
+      return item;
+    });
+  } catch(e) {
+    console.error('خطأ في تحميل البيانات', e);
+  }
+}
+
+window.saveToStorage = function() {
+  try {
+    localStorage.setItem('conge_solde', solde.toString());
+    localStorage.setItem('conge_list', JSON.stringify(congeList));
+    localStorage.setItem('extra_list', JSON.stringify(extraList));
+    document.getElementById('lastSaveTime').textContent = getCurrentDateTime();
+    showToast('تم حفظ البيانات بنجاح');
+  } catch(e) {
+    console.error('خطأ في حفظ البيانات', e);
+    showToast('خطأ في الحفظ');
+  }
+}
+
+const s = document.getElementById('solde');
+const t = document.getElementById('toast');
+
+function showToast(m) {
+  t.textContent = m;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// ========== طباعة PDF ==========
+window.printAsPDF = function() {
+  try {
+    showToast('جاري تحضير PDF...');
+    updatePrintTables();
+    const reportElement = document.getElementById('printableReport');
+    
+    html2canvas(reportElement, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jspdf.jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`MOHAMED_SALHI_تقرير_${getCurrentDateTime().slice(0,10)}.pdf`);
+      showToast('تم حفظ PDF بنجاح');
+    });
+  } catch(e) {
+    console.error(e);
+    showToast('خطأ في إنشاء PDF');
+  }
+}
+
+// ========== طباعة JPG ==========
+window.printAsJPG = function() {
+  try {
+    showToast('جاري تحضير الصورة...');
+    updatePrintTables();
+    const reportElement = document.getElementById('printableReport');
+    
+    html2canvas(reportElement, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const link = document.createElement('a');
+      link.download = `MOHAMED_SALHI_تقرير_${getCurrentDateTime().slice(0,10)}.jpg`;
+      link.href = imgData;
+      link.click();
+      showToast('تم حفظ JPG بنجاح');
+    });
+  } catch(e) {
+    console.error(e);
+    showToast('خطأ في إنشاء الصورة');
+  }
+}
+
+// ========== تحديث جداول التقرير ==========
+function updatePrintTables() {
+  document.getElementById('reportDate').innerHTML = `<i class="fas fa-calendar"></i> تاريخ التقرير: ${getCurrentDateTime()} | MOHAMED SALHI`;
+  
+  let printConge = document.getElementById('printCongeTable');
+  if(!congeList.length) {
+    printConge.innerHTML = '<tr><td colspan="6" style="padding:10px;">لا توجد عطل</td></tr>';
+  } else {
+    printConge.innerHTML = congeList.map(c => {
+      let notes = c.excluded && c.excluded.length ? 
+        c.excluded.map(e => `${e.date.slice(5)}(${e.reason})`).join(' ') : '-';
+      let typeText = c.type == 0.5 ? 'نصف يوم' : 'كامل';
+      let createdDate = c.createdAt ? c.createdAt.slice(5) : '-';
+      
+      return `<tr>
+        <td>${c.start.slice(5)}<br>إلى ${c.end.slice(5)}</td>
+        <td>${c.days}</td>
+        <td>${typeText}</td>
+        <td>${c.reason}</td>
+        <td>${notes}</td>
+        <td>${createdDate}</td>
+      </tr>`;
+    }).join('');
+  }
+  
+  let printExtra = document.getElementById('printExtraTable');
+  if(!extraList.length) {
+    printExtra.innerHTML = '<tr><td colspan="5" style="padding:10px;">لا توجد أيام إضافية</td></tr>';
+  } else {
+    printExtra.innerHTML = extraList.map(e => {
+      let typeText = e.type == 0.5 ? 'نصف يوم' : 'كامل';
+      let createdDate = e.createdAt ? e.createdAt.slice(5) : '-';
+      
+      return `<tr>
+        <td>${e.date.slice(5)}</td>
+        <td>${e.reason}</td>
+        <td>${typeText}</td>
+        <td>+${e.type}</td>
+        <td>${createdDate}</td>
+      </tr>`;
+    }).join('');
+  }
+  
+  document.getElementById('printSolde').textContent = solde.toFixed(1);
+}
+
+// ========== مسح كل البيانات ==========
+window.clearAllData = function() {
+  solde = 25.0;
+  tempExcluded = [];
+  congeList = [];
+  extraList = [];
+  updateAll();
+  saveToStorage();
+  showToast('تم مسح جميع البيانات');
+}
+
+// ========== الأيام المستبعدة المؤقتة ==========
+function addExcluded() {
+  let d = document.getElementById("excludedDate").value;
+  let r = document.getElementById("excludedReason").value;
+  if(!d || !r) return showToast('أكمل البيانات');
+  tempExcluded.push({date:d, reason:r}); 
+  renderExcluded(); 
+  document.getElementById("excludedDate").value = '';
+  document.getElementById("excludedReason").value = '';
+  showToast('تم الإضافة');
+}
+
+function renderExcluded() {
+  let b = document.getElementById("excludedList");
+  if(!tempExcluded.length) {
+    b.innerHTML = '<span style="color:#999;"><i class="fas fa-info-circle"></i> لا يوجد</span>';
+    return;
+  }
+  b.innerHTML = tempExcluded.map((e,i) => 
+    `<div class="excluded-item">
+      <i class="fas fa-times-circle" style="color:#ff9800"></i> ${e.date.slice(5)} (${e.reason}) 
+      <button class="small" onclick='editExcluded(${i})' style="background:#0f9d58;padding:2px 5px;"><i class="fas fa-edit"></i></button>
+      <button class="small" onclick='removeExcluded(${i})' style="background:#ea4335;padding:2px 5px;"><i class="fas fa-trash"></i></button>
+    </div>`).join('');
+}
+
+window.removeExcluded = function(i) {
+  tempExcluded.splice(i,1);
+  renderExcluded();
+  showToast('تم الحذف');
+}
+
+window.editExcluded = function(i) {
+  let e = tempExcluded[i];
+  document.getElementById("excludedDate").value = e.date;
+  document.getElementById("excludedReason").value = e.reason;
+  tempExcluded.splice(i,1);
+  renderExcluded();
+  showToast('عدل ثم أضف مرة أخرى');
+}
+
+// ========== حساب الأيام ==========
+function computeDays(s, e, type) {
+  let c = new Date(s);
+  let ed = new Date(e);
+  let ex = [];
+  let cnt = 0;
+  
+  if(type == 0.5) {
+    let d = s;
+    let m = tempExcluded.find(x => x.date === d);
+    if(m) {
+      ex.push({date:d, reason:m.reason});
+    } else if(new Date(s).getDay() === 0) {
+      ex.push({date:d, reason:"الأحد"});
+    } else {
+      cnt = 0.5;
+    }
+    return {count:cnt, excluded:ex};
+  }
+  
+  while(c <= ed) {
+    let d = c.toISOString().slice(0,10);
+    let m = tempExcluded.find(x => x.date === d);
+    if(m) {
+      ex.push({date:d, reason:m.reason});
+    } else if(c.getDay() === 0) {
+      ex.push({date:d, reason:"الأحد"});
+    } else {
+      cnt++;
+    }
+    c.setDate(c.getDate() + 1);
+  }
+  return {count:cnt, excluded:ex};
+}
+
+// ========== العطل ==========
+window.applyConge = function() {
+  let s = document.getElementById("startDate").value;
+  let e = document.getElementById("endDate").value;
+  let r = document.getElementById("reason").value;
+  let type = parseFloat(document.getElementById("congeType").value);
+  
+  if(!s || !e || !r) return showToast('أكمل البيانات');
+  
+  if(type == 0.5 && s != e) {
+    showToast('نصف يوم يجب أن يكون تاريخ بداية ونهاية متطابق');
+    return;
+  }
+  
+  let res = computeDays(s, e, type);
+  
+  if(res.count > solde) return showToast('الرصيد غير كاف');
+  
+  solde = parseFloat((solde - res.count).toFixed(1));
+  
+  congeList.push({
+    start:s, 
+    end:e, 
+    days:res.count, 
+    type:type,
+    excluded:res.excluded, 
+    reason:r,
+    createdAt: getCurrentDateTime(),
+    updatedAt: getCurrentDateTime()
+  });
+  
+  tempExcluded = []; 
+  updateAll();
+  saveToStorage();
+  document.getElementById("startDate").value = '';
+  document.getElementById("endDate").value = '';
+  document.getElementById("reason").value = '';
+  showToast(`تم استهلاك ${res.count} يوم`);
+}
+
+function renderTable() {
+  let t = document.getElementById("congeTable");
+  if(!congeList.length) {
+    t.innerHTML = '<tr><td colspan="7" style="padding:10px;color:#999;">لا توجد عطل</td></tr>';
+    return;
+  }
+  
+  t.innerHTML = congeList.map((c,i) => {
+    let notes = '';
+    if(c.excluded && c.excluded.length > 0) {
+      notes = c.excluded.map(e => 
+        `<span class="note-item"><i class="fas fa-calendar-times"></i> ${e.date.slice(5)} (${e.reason})</span>`
+      ).join(' ');
+    } else {
+      notes = '-';
+    }
+    
+    let typeText = c.type == 0.5 ? '<span class="half-badge"><i class="fas fa-adjust"></i> نصف</span>' : 'كامل';
+    let createdDate = c.createdAt ? c.createdAt.slice(5) : '-';
+    
+    return `<tr>
+      <td>${c.start.slice(5)}<br><span style="font-size:0.6rem;color:#666;">إلى ${c.end.slice(5)}</span></td>
+      <td><strong>${c.days}</strong></td>
+      <td>${typeText}</td>
+      <td style="max-width:80px;">${c.reason}</td>
+      <td class="note-cell">${notes}</td>
+      <td><span class="date-badge"><i class="fas fa-clock"></i> ${createdDate}</span></td>
+      <td>
+        <div class="action-buttons">
+          <button class="small" onclick='editConge(${i})' style="background:#0f9d58;" title="تعديل"><i class="fas fa-edit"></i></button>
+          <button class="small" onclick='deleteConge(${i})' style="background:#ea4335;" title="حذف"><i class="fas fa-trash"></i></button>
+        </div>
+      </td></tr>`;
+  }).join('');
+}
+
+window.deleteConge = function(i) {
+  solde = parseFloat((solde + congeList[i].days).toFixed(1));
+  congeList.splice(i,1);
+  updateAll();
+  saveToStorage();
+  showToast('تم الحذف');
+}
+
+window.editConge = function(i) {
+  let c = congeList[i];
+  document.getElementById("startDate").value = c.start;
+  document.getElementById("endDate").value = c.end;
+  document.getElementById("reason").value = c.reason;
+  document.getElementById("congeType").value = c.type;
+  tempExcluded = c.excluded.filter(e => e.reason !== "الأحد");
+  solde = parseFloat((solde + c.days).toFixed(1));
+  congeList.splice(i,1);
+  updateAll();
+  showToast('عدل البيانات ثم طبق من جديد');
+}
+
+// ========== الأيام الإضافية ==========
+function addExtra() {
+  let d = document.getElementById("extraDate").value;
+  let r = document.getElementById("extraReason").value;
+  let type = parseFloat(document.getElementById("extraType").value);
+  
+  if(!d || !r) return showToast('أكمل البيانات');
+  
+  extraList.push({
+    date:d, 
+    reason:r, 
+    type:type,
+    createdAt: getCurrentDateTime(),
+    updatedAt: getCurrentDateTime()
+  }); 
+  
+  solde = parseFloat((solde + type).toFixed(1)); 
+  updateAll();
+  saveToStorage();
+  document.getElementById("extraDate").value = '';
+  document.getElementById("extraReason").value = '';
+  showToast(`تمت الإضافة +${type} يوم`);
+}
+
+function renderExtra() {
+  let t = document.getElementById("extraTable");
+  if(!extraList.length) {
+    t.innerHTML = '<tr><td colspan="6" style="padding:10px;color:#999;">لا توجد أيام إضافية</td></tr>';
+    return;
+  }
+  
+  t.innerHTML = extraList.map((e,i) => {
+    let createdDate = e.createdAt ? e.createdAt.slice(5) : '-';
+    return `<tr>
+      <td>${e.date.slice(5)}</td>
+      <td>${e.reason}</td>
+      <td>${e.type == 0.5 ? 'نصف' : 'كامل'}</td>
+      <td><span style="color:#0f9d58">+${e.type}</span></td>
+      <td><span class="date-badge"><i class="fas fa-clock"></i> ${createdDate}</span></td>
+      <td>
+        <div class="action-buttons">
+          <button class="small" onclick='editExtra(${i})' style="background:#0f9d58;"><i class="fas fa-edit"></i></button>
+          <button class="small" onclick='deleteExtra(${i})' style="background:#ea4335;"><i class="fas fa-trash"></i></button>
+        </div>
+      </td></tr>`;
+  }).join('');
+}
+
+window.deleteExtra = function(i) {
+  solde = parseFloat((solde - extraList[i].type).toFixed(1));
+  extraList.splice(i,1);
+  updateAll();
+  saveToStorage();
+  showToast('تم الحذف');
+}
+
+window.editExtra = function(i) {
+  let e = extraList[i];
+  document.getElementById("extraDate").value = e.date;
+  document.getElementById("extraReason").value = e.reason;
+  document.getElementById("extraType").value = e.type;
+  solde = parseFloat((solde - e.type).toFixed(1));
+  extraList.splice(i,1);
+  updateAll();
+  showToast('عدل البيانات ثم أضف من جديد');
+}
+
+// ========== تحديث الكل ==========
+function updateAll() {
+  s.textContent = solde.toFixed(1);
+  renderExcluded();
+  renderTable();
+  renderExtra();
+}
+
+// التهيئة
+document.getElementById('lastSaveTime').textContent = getCurrentDateTime();
+</script>
+</body>
+</html>
